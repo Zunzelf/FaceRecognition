@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
                 bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageURI);
                 inp.setImageBitmap(bitmap);
                 bitmap2 = new ImageUtils().skinFilter(bitmap);
-                new ImageChainCode().seekObjects(bitmap2);
+                inp.setImageBitmap(new ImageChainCode().seekObjects(bitmap, bitmap2).first);
                 ((ImageView) findViewById(R.id.imageView2)).setImageBitmap(bitmap2);
             } catch (IOException e) {
                 e.printStackTrace();
