@@ -1,207 +1,120 @@
 package zunzelf.org.facerecognition.utils;
 
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.util.Log;
 import android.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ImageChainCode {
+public class ImageChainCode2 {
     static final int white = 0xFFFFFFFF;
     static final int black = 0xFF000000;
     final static int[][][] nbrGroups = {{{0, 2, 4}, {2, 4, 6}}, {{0, 2, 6},
             {0, 4, 6}}};
     int obj = 0;
+    int w = 0;
+    int h = 0;
     static final String TAG = "imProc";
     int[] temp_c = new int[4];
-
-    public static Bitmap createBlackAndWhite(Bitmap src) {
-        int width = src.getWidth();
-        int height = src.getHeight();
-
-        Bitmap bmOut = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-
-        final float factor = 255f;
-        final float redBri = 0.2126f;
-        final float greenBri = 0.2126f;
-        final float blueBri = 0.0722f;
-
-        int length = width * height;
-        int[] inpixels = new int[length];
-        int[] oupixels = new int[length];
-
-        src.getPixels(inpixels, 0, width, 0, 0, width, height);
-
-        int point = 0;
-        for(int pix: inpixels){
-            int R = (pix >> 16) & 0xFF;
-            int G = (pix >> 8) & 0xFF;
-            int B = pix & 0xFF;
-
-            float lum = (redBri * R / factor) + (greenBri * G / factor) + (blueBri * B / factor);
-
-            if (lum > 0.4) {
-                oupixels[point] = white;
-            }else{
-                oupixels[point] = black;
-            }
-            point++;
-        }
-        bmOut.setPixels(oupixels, 0, width, 0, 0, width, height);
-        return bmOut;
-    }
-    public static int[][] toBinary(Bitmap src) {
-        int width = src.getWidth();
-        int height = src.getHeight();
-        int[][] res = new int[width][height];
-
-        final float factor = 255f;
-        final float redBri = 0.2126f;
-        final float greenBri = 0.2126f;
-        final float blueBri = 0.0722f;
-
-        int length = width * height;
-        int[] inpixels = new int[length];
-        int[] oupixels = new int[length];
-        int x = 0;
-        int y = 0;
-        src.getPixels(inpixels, 0, width, 0, 0, width, height);
-
-        int point = 0;
-        for(int pix: inpixels){
-            int R = (pix >> 16) & 0xFF;
-            int G = (pix >> 8) & 0xFF;
-            int B = pix & 0xFF;
-
-            float lum = (redBri * R / factor) + (greenBri * G / factor) + (blueBri * B / factor);
-
-            if (lum > 0.4) {
-                res[x][y] = 0;
-            }else{
-                res[x][y] = 1;
-            }
-            point++;
-            x++;
-            if(x > width){
-                y++;
-                x = 0;
-            }
-        }
-        return res;
-    }
-    public List<String> seekObjects(Bitmap bm){
-        bm = bm.copy(bm.getConfig(), true);
-        int w = bm.getWidth();
-        List<String> chainCode = new ArrayList<String>();
-        List<Pair<Integer[], String>> res = new ArrayList<Pair<Integer[], String>>();
-        double mean_box = 0;
-        int h = bm.getHeight();
-        int x = 1, y = 1;
-        int clr;
-        String ch = "";
-        while(y < h-1){
-            clr = bm.getPixel(x,y);
-            if(clr != white){
-                Log.d(TAG, "X : "+ x +", Y : "+y);
-                ch = getChainCode(bm, x, y);
-                Pair<Integer[], String> temp = new Pair(temp_c, ch);
-                // xMax, yMax, xMin, yMin
-                mean_box += (temp_c[0] - temp_c[2])*(temp_c[1] - temp_c[3]);
-                res.add(temp);
-            }
-            if(x == w-2){
-                x = 0;
-                y += 1;
-            }else
-                x += 1;
-        }
-        mean_box = mean_box/res.size();
-        Log.d("result", "mean object size = "+mean_box);
-        for (Pair p : res){
-            temp_c = (int[])p.first;
-            double size = (temp_c[0] - temp_c[2])*(temp_c[1] - temp_c[3]);
-            if (size >= mean_box) {
-                chainCode.add((String)p.second);
-            }
-        }
-        Log.d("result", "detected : "+chainCode.size());
-        return chainCode;
-    }
-    // this method used for marking objects detected by seekobject
-    public Pair<Bitmap, List<String>> seekObjects(Bitmap src, Bitmap bm){
-        bm = bm.copy(bm.getConfig(), true);
+    public Pair<Bitmap, int[]> seekObjects(Bitmap src, Bitmap inp){
         Bitmap origin = src.copy(src.getConfig(), true);
-        int w = bm.getWidth();
+        w = inp.getWidth();
+        List<int[]> objs = new ArrayList<int[]>();
         List<String> chainCode = new ArrayList<String>();
         List<Pair<Integer[], String>> res = new ArrayList<Pair<Integer[], String>>();
         double mean_box = 0;
-        int h = bm.getHeight();
+        h = inp.getHeight();
+        int[] bm = new int[w * h];
+        inp.getPixels(bm, 0, w, 0, 0, w, h);
         int x = 1, y = 1;
-        int clr;
+        int clr, index;
         String ch = "";
-        while(y < h-1){
-            clr = bm.getPixel(x,y);
+        while(y < h-2){
+            index = (y * w)+ x;
+            clr = bm[index];
             if(clr != white){
                 Log.d(TAG, "X : "+ x +", Y : "+y);
                 ch = getChainCode(bm, x, y);
                 Pair<Integer[], String> temp = new Pair(temp_c, ch);
                 // xMax, yMax, xMin, yMin
-                mean_box += (temp_c[0] - temp_c[2])*(temp_c[1] - temp_c[3]);
+                if(ch.length() > 10)
+                    mean_box += (temp_c[0] - temp_c[2])*(temp_c[1] - temp_c[3]);
                 res.add(temp);
             }
             if(x == w-2){
-                x = 0;
+                x = 1;
                 y += 1;
             }else
                 x += 1;
         }
         mean_box = mean_box/res.size();
         Log.d("result", "mean object size = "+mean_box);
+        int pts = 0;
         for (Pair p : res){
             temp_c = (int[])p.first;
             double size = (temp_c[0] - temp_c[2])*(temp_c[1] - temp_c[3]);
-            if (size >= mean_box) {
+            if (size >= mean_box && ((String)p.second).length() > 10) {
                 origin = drawBox(origin, temp_c);
+                Log.d("result", pts+"-object : ");
+                Log.d("result", "length : " + ((String)p.second).length());
+                Log.d("result", "size   : " + size);
+                Log.d("result", "width   : " + (temp_c[0] - temp_c[2]));
+                Log.d("result", "height   : " + (temp_c[1] - temp_c[3]));
                 chainCode.add((String)p.second);
+                objs.add(temp_c);
+                pts++;
             }
         }
         Log.d("result", "detected : "+chainCode.size());
-        return new Pair<Bitmap, List<String>>(origin, chainCode);
+        return new Pair<Bitmap, int[]>(origin, objs.get(0));
     }
     public Bitmap drawBox(Bitmap bm, int[] points){
         Bitmap res = bm.copy(bm.getConfig(), true);
-        System.out.println(points);
-        for(int y = points[3]; y <= points[1] + 1; y++){
+        for(int y = points[3]; y <= (points[1] + 1); y++){
             for(int x = points[2]; x <= points[0] + 1; x++){
-                if(x == points[2] || x == points[0] || y == points[3] || y == points[1])
-                    System.out.println(y);
+                if((x >= points[2]) && (x <= points[2] + 10))
                     res.setPixel(x, y, Color.GREEN);
+                else if ((x <= points[0]) && (x >= points[0] - 10))
+                    res.setPixel(x, y, Color.GREEN);
+                else if ((y >= points[3]) && (y <= points[3] + 10))
+                    res.setPixel(x, y, Color.GREEN);
+                else if(y >= points[1] - 10 && y <= points[1]){
+                    res.setPixel(x, y, Color.GREEN);}
             }
         }
         return res;
     }
-    public String getChainCode(Bitmap bm, int initX, int initY){
+    public String getChainCode(int[] bm, int initX, int initY){
         String chainCode = "0";
         boolean start = true;
+        int count = 0;
         int x = initX;
         int y = initY;
         int xMax = x, xMin = x, yMax = y, yMin = y;
         int[] temp = new int[2];
         int dir = 0; //starting direction
-        Log.d(TAG, " height : "+bm.getHeight());
-        Log.d(TAG, " width : "+bm.getWidth());
         while(true){
             if(x == initX && y == initY && !start) break;
             int[] left = leftSide(dir); //get leftsides
             int[] right = rightSide(dir); //get rightsides
-            int[] up = translate(x,y,dir); //get up coordinate
+            int[] up = translate(x, y, dir); //get up coordinate
             int[] dirL = checkSide(bm, x, y, left);
             int[] dirR = checkSide(bm, x, y, right);
-            int upV = bm.getPixel(up[0], up[1]);
+            int index = (up[1] * w)+ up[0];
+            if(dirL.length <= 0 && dirR.length <= 0 && bm[index] == white){
+                chainCode = "";
+                break;
+            }
+            int upV = white;
+            boolean safe;
+            if( index < bm.length){
+                safe = true;
+                upV = bm[index];
+            }
+            else
+                safe = false;
             // checking per-dir
             if(dirL.length > 0){
                 if(dirL.length > 1 && upV != white){
@@ -230,6 +143,7 @@ public class ImageChainCode {
             if(y > yMax) yMax = y;
             if(y < yMin) yMin = y;
             start = false;
+            count += 1;
         }
         Log.d(TAG, chainCode);
         Log.d(TAG,xMax+","+ yMax+","+xMin+","+ yMin);
@@ -237,13 +151,15 @@ public class ImageChainCode {
         eraseObject(bm, xMax, yMax, xMin, yMin);
         return chainCode;
     }
-    public int[] checkSide(Bitmap bm, int x, int y, int[] side){
+    public int[] checkSide(int[] bm, int x, int y, int[] side){
         String gets = "";
         for (int dir : side) {
             int[] temp = translate(x, y, dir);
-            if(bm.getPixel(temp[0], temp[1]) != white){
-                gets += ""+dir;
-            }
+            int index = (temp[1] * w) + temp[0];
+            if (index < bm.length)
+                if(bm[index] != white)
+                    gets += ""+dir;
+
         }
         int[] res = stringToInts(gets);
         return res;
@@ -286,10 +202,12 @@ public class ImageChainCode {
             default : return new int[]{6,5,4};
         }
     }
-    public void eraseObject(Bitmap bm, int x, int y, int i, int j){
+    public void eraseObject(int[] bm, int x, int y, int i, int j){
         for (int b = j; b <= y; b++){
-            for (int a = i; a <= x; a++)
-                bm.setPixel(a, b, white);
+            for (int a = i; a <= x; a++){
+                int index = (b * w) + a;
+                bm[index] = white;
+            }
         }
     }
     public int[] stringToInts(String s){
