@@ -117,7 +117,7 @@ public class ImageUtils {
                 int edgeColor = edgeColors[i][j];
                 edgeColor = (int)(edgeColor * scale);
                 edgeColor = 0xff000000 | (edgeColor << 16) | (edgeColor << 8) | edgeColor;
-                index = (j*w)+i;
+                index = (j * w) + i;
                 pixels[index] = edgeColor;
             }
         }

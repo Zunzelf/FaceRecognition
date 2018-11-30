@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
                 int[] pts = prcssd.second;
                 Log.d("result", "drawing @("+pts[0]+", "+pts[1]+", "+pts[2]+", "+pts[3]+")");
                 bitmap2 = Bitmap.createBitmap(bitmap, pts[2], pts[3], pts[0] - pts[2], pts[1] - pts[3]);
-//                bitmap2 = new ImageUtils().sobelFilter(bitmap2);
+                ((ImageView) findViewById(R.id.imageView3)).setImageBitmap(new ImageUtils().sobelFilter(bitmap2));
 //                bitmap2 = new ImageUtils().dilation(bitmap2, 3);
                 bitmap2 = new ImageUtils().skinFilter(bitmap2);
                 ((ImageView) findViewById(R.id.imageView2)).setImageBitmap(bitmap2);
